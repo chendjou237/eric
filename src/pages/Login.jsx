@@ -8,6 +8,7 @@ export default function Login() {
   const [password, setPassword] = React.useState("")
   const [isLoading, setIsLoading] = React.useState(false)
   const [isAdmin, setIsAdmin] = React.useState(false)
+  const [isSuperAdmin, setIsSuperAdmin] = React.useState(false)
   const navigate = useNavigate();
   const handleLogin = async () => {
     setIsLoading(true)
@@ -15,7 +16,7 @@ export default function Login() {
     var authData;
     const pb =  new PocketBase("http://127.0.0.1:8090")
     try {
-       authData = await pb.collection(isAdmin?'admins': 'employees').authWithPassword(
+       authData = await pb.collection(isAdmin?'admins': isSuperAdmin? 'superAdmins': 'employees').authWithPassword(
     username,
     password,
        )
@@ -60,18 +61,41 @@ export default function Login() {
             <span className="label-text">Password</span>
           </label>
                   <input type="password" placeholder="password" className="input input-bordered" onChange={e => setPassword(e.target.value)} />
-                  <div className="form-control">
+                  {/* <div className="form-control">
   <label className="label cursor-pointer">
     <span className="label-text">Are you an admin? </span> 
     <input type="checkbox" className="toggle" onChange={e=> setIsAdmin(e.target.value)}  />
+  </label>
+                  </div> */}
+                  <div className="form-control">
+  <label className="label cursor-pointer">
+    <span className="label-text">Employee</span> 
+                      <input type="radio" name="radio-10" className="radio checked:bg-red-500"   onChange={e => {
+                        if(e.target.checked) {
+                          setIsAdmin(false)
+                          setIsSuperAdmin(false)
+                        }
+    }} />
+  </label>
+</div>
+<div className="form-control">
+  <label className="label cursor-pointer">
+    <span className="label-text">Admin</span> 
+    <input type="radio" onChange={e=> setIsAdmin(e.target.value)} name="radio-10" className="radio checked:bg-blue-500"  />
+  </label>
+</div>
+<div className="form-control">
+  <label className="label cursor-pointer">
+    <span className="label-text">Super Admin</span> 
+    <input type="radio" name="radio-10" onChange={e=> setIsSuperAdmin(e.target.value)} className="radio checked:bg-green-500"  />
   </label>
 </div>
           <label className="label">
             <Link to="/forgot-password" className="label-text-alt link link-hover">Forgot password?</Link>
           </label>
-          <label className="label">
+          {/* <label className="label">
             <Link to="/signup" className="label-text-alt text-purple-700 link link-hover">new? Sign up!</Link>
-          </label>
+          </label> */}
         </div>
         <div className="form-control mt-6">
           <button className="btn btn-primary" onClick={handleLogin}>Login</button>

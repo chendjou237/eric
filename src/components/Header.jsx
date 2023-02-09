@@ -9,40 +9,52 @@ export default function Header() {
   const navigate = useNavigate();
   const pb = new PocketBase("http://127.0.0.1:8090");
   const isAdmin = pb.authStore.model?.collectionName == "admins";
+  const isSuperAdmin = pb.authStore.model?.collectionName == "superAdmins";
+  var departmentId = "";
+  if(!isAdmin || !isSuperAdmin)  departmentId = pb.authStore.model?.department;
   const queryClient = useQueryClient();
   const handleLogout = () => {
+    pb.authStore.clear();
     navigate("/login");
   };
   var departments = [];
-  if (isAdmin) {
     const { isError, isSuccess, isLoading, data, error } = useQuery(
       ["departments"],
       getDepartments
     );
     if (isError) {
-      console.log(error);
       return <div>Something went wrong: {error}</div>;
     }
     if (isLoading) {
       return <div>Loading...</div>;
     }
+    var departmentName
     if (isSuccess) {
       departments = data;
+      if (!isAdmin && !isSuperAdmin) {
+        
+        departmentName = departments.find((department) => department.id === departmentId).name;
+      }
     }
-  }
+  
 
   return (
     <div className="navbar bg-base-100">
       <div className="flex-1">
         <img src={logo} alt="logo" className="rounded-full w-16" />
-        <a className="btn btn-ghost normal-case text-xl">Home</a>
+        <Link to={'/'} className="btn btn-ghost normal-case text-xl">Home</Link>
       </div>
       <div className="flex-none">
         <ul className="menu menu-horizontal px-1">
-          <li>
-            <a>admins</a>
-          </li>
-          {isAdmin && (
+          {
+          isAdmin || isSuperAdmin
+          ? <li>
+                      <Link to={'/admins'}>admins</Link>
+                    </li>
+          : null
+          }
+      
+          {isAdmin || isSuperAdmin ? (
             <li tabIndex={0}>
               <a>
                 Departments
@@ -68,7 +80,11 @@ export default function Header() {
                 })}
               </ul>
             </li>
-          )}
+          ) : 
+            <li>
+              <Link to={`/departments/${departmentId}`}>{departmentName }</Link>
+          </li>
+          }
 
           <li>
             <button onClick={handleLogout}>Log Out</button>

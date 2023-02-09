@@ -5,25 +5,26 @@ import getDepartment from "../services/department/getDepartment";
 import Spinner from "../components/Spinner";
 import ExcelExport from "../components/ExcelExport";
 import ExcelImport from "../components/ExcelImport";
-import getRecord from "../services/record/getRecord";
-import updateRecord from "../services/record/updateRecord";
-import EditModal from "../components/Editmodal";
-
+import updateEmployee from "../services/employee/updateEmployee";
+import AddRecordButton from "../components/AddRecordButton";
+import DeleteRecordButton from "../components/DeleteRecordButton";
+import getDepartmentEmployees from "../services/employee/getDepartmentEmployee";
+import PocketBase from "pocketbase";
 const getDataValue = (data, e) => {
   switch (data) {
-    case "field_1":
-      return { field_1: e.target.value };
+    case "id":
+      return { "id": e.target.value };
 
-    case "field_2":
-      return { field_2: e.target.value };
-    case "field_3":
-      return { field_3: e.target.value };
-    case "field_4":
-      return { field_4: e.target.value };
-    case "field_5":
-      return { field_5: e.target.value };
-    case "field_6":
-      return { field_6: e.target.value };
+    case "username":
+      return { username: e.target.value };
+    case "full_name":
+      return { full_name: e.target.value };
+    case "home_address":
+      return { home_address: e.target.value };
+    case "email":
+      return { email: e.target.value };
+    case "phone":
+      return { phone: e.target.value };
     case "field_7":
       return { field_7: e.target.value };
     case "field_8":
@@ -40,7 +41,8 @@ const getDataValue = (data, e) => {
 export default function Departments() {
   const { id } = useParams();
   const queryClient = useQueryClient();
-
+  const pb = new PocketBase("http://127.0.0.1:8090");
+  const isEmployee = pb.authStore.model.collectionName === "employees";
   console.log("yo");
   const [departmentQuery, tableQuery] = useQueries({
     queries: [
@@ -49,8 +51,8 @@ export default function Departments() {
         queryFn: () => getDepartment(id),
       },
       {
-        queryKey: ["table"],
-        queryFn: () => getRecord(id),
+        queryKey: ["users"],
+        queryFn: () => getDepartmentEmployees(id),
       },
     ],
   });
@@ -63,15 +65,15 @@ export default function Departments() {
   }
   const { data } = tableQuery;
   console.log(data);
-  const handleEdit = (id, e, index) => {
+  const handleEdit = (id, e, field) => {
     e.preventDefault();
-    const field = `field_${index}`;
     const data = getDataValue(field, e);
-    console.log(e.target.value + "field " + index);
-    updateRecord(id, data);
+    console.log(e.target.value + " " + field);
+    updateEmployee(id, data);
   };
+  
   return (
-    <div>
+    <div className= "h-screen">
       <div className="flex justify-between">
         <h1 className="text-xl font-bold m-8">
           Welcome to the {departmentQuery.data.name} Department
@@ -80,21 +82,29 @@ export default function Departments() {
       <div className="">
         <div className="overflow-x-auto">
           <div className="flex mb-4 mr-4 justify-end space-x-2">
-            <ExcelExport
-              data={[...data.items.map((record) => record.export())]}
-            />
-            <ExcelImport />
+        {
+        !isEmployee
+        ? <>    <ExcelExport
+                      data={[...data.items.map((record) => record.export())]}
+                    />
+                    <ExcelImport />
+                      <AddRecordButton id={departmentQuery.data.id} />
+                    </>
+                    
+        : null
+        }
+          
           </div>
           <table className="table w-full">
             <thead>
               <tr>
                 <th> </th>
-                <th>Field 1</th>
-                <th>Field 2</th>
-                <th>Field 3</th>
-                <th>Field 4</th>
-                <th>Field 5</th>
-                <th>Field 6</th>
+                <th>ID</th>
+                <th>username</th>
+                <th>Full Name</th>
+                <th>Home Address</th>
+                <th>Email</th>
+                <th>Phone Number</th>
                 <th>Field 7</th>
                 <th>Field 8</th>
                 <th>Field 9</th>
@@ -106,37 +116,107 @@ export default function Departments() {
               {data.items.map((item) => {
                 // console.log(item);
                 const {
-                  field_1,
-                  field_2,
-                  field_3,
-                  field_4,
-                  field_5,
-                  field_6,
+                  id,
+                  username,
+                  full_name,
+                  home_address,
+                  email,
+                  phone,
                   field_7,
                   field_8,
                   field_9,
                   field_10,
                 } = item;
-
+                const isNotCurrentEmployee = pb.authStore.model.id !== id || !isEmployee;
                 return (
                   <tr className="hover" key={item.id}>
                     <th>1</th>
                     <td>
-                      <input
+                      <input disabled={isEmployee}
                         className="bg-transparent focus:border-transparent w-16"
-                        placeholder={field_1}
-                        onBlur={(e) => handleEdit(item.id, e, 1)}
+                        placeholder={id}
+                        onBlur={(e) => handleEdit(item.id, e, "id")}
                       />
                     </td>
-                    <td>{field_2}</td>
-                    <td>{field_3}</td>
-                    <td>{field_4}</td>
-                    <td>{field_5}</td>
-                    <td>{field_6}</td>
-                    <td>{field_7}</td>
-                    <td>{field_8}</td>
-                    <td>{field_9}</td>
-                    <td>{field_10}</td>
+                    <td>
+                      {" "}
+                      <input
+                        className="bg-transparent focus:border-transparent w-16"  disabled={isNotCurrentEmployee}
+                        placeholder={username}
+                        onBlur={(e) => handleEdit(item.id, e, "username")}
+                      />
+                    </td>
+                    <td>
+                      {" "}
+                      <input
+                        className="bg-transparent focus:border-transparent w-16" disabled={isNotCurrentEmployee}
+                        placeholder={full_name}
+                        onBlur={(e) => handleEdit(item.id, e, "full_name")}
+                      />
+                    </td>
+                    <td>
+                      {" "}
+                      <input
+                        className="bg-transparent focus:border-transparent w-16" disabled={isNotCurrentEmployee}
+                        placeholder={home_address}
+                        onBlur={(e) => handleEdit(item.id, e, "home_address")}
+                      />
+                    </td>
+                    <td>
+                      {" "}
+                      <input
+                        className="bg-transparent focus:border-transparent w-16" disabled={isNotCurrentEmployee}
+                        placeholder={email}
+                        onBlur={(e) => handleEdit(item.id, e, "email")}
+                      />
+                    </td>
+                    <td>
+                      {" "}
+                      <input
+                        className="bg-transparent focus:border-transparent w-16" disabled={isNotCurrentEmployee}
+                        placeholder={phone}
+                        onBlur={(e) => handleEdit(item.id, e, "phone")}
+                      />
+                    </td>
+                    <td>
+                      {" "}
+                      <input
+                        className="bg-transparent focus:border-transparent w-16" disabled={isNotCurrentEmployee}
+                        placeholder={field_7}
+                        onBlur={(e) => handleEdit(item.id, e, 7)}
+                      />
+                    </td>
+                    <td>
+                      {" "}
+                      <input
+                        className="bg-transparent focus:border-transparent w-16"  disabled={isNotCurrentEmployee}
+                        placeholder={field_8}
+                        onBlur={(e) => handleEdit(item.id, e, 8)}
+                      />
+                    </td>
+                    <td>
+                      {" "}
+                      <input
+                        className="bg-transparent focus:border-transparent w-16" disabled={isNotCurrentEmployee}
+                        placeholder={field_9}
+                        onBlur={(e) => handleEdit(item.id, e, 9)}
+                      />
+                    </td>
+                    <td>
+                      {" "}
+                      <input
+                        className="bg-transparent focus:border-transparent w-16" disabled={isNotCurrentEmployee}
+                        placeholder={field_10}
+                        onBlur={(e) => handleEdit(item.id, e, 10)}
+                      />
+                    </td>
+                {
+                !isNotCurrentEmployee
+                ?     <td>
+                                      <DeleteRecordButton id={item.id} />{" "}
+                                    </td>
+                : null
+                }
                     <td>
                       {/* <label
                         htmlFor="my-modal"
